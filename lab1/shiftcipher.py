@@ -7,6 +7,7 @@
 import sys, string
 import argparse
 
+# reverse mapping of string.printable
 rev_printable = {string.printable[i]:i for i in range(len(string.printable))}
 
 def shift_right(text, key):
@@ -20,7 +21,7 @@ def shift_left(text, key):
 
 def byteshift_right(text, key):
     barr = bytearray(text, 'utf-8')
-    text_crypt = [chr((i+key)%256) for i in barr]
+    text_crypt = [chr((i+key)%256) for i in barr]+
     cryptext = str(''.join(text_crypt))
     return cryptext
 

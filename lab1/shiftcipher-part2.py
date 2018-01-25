@@ -7,17 +7,6 @@
 import sys, string
 import argparse
 
-rev_printable = {string.printable[i]:i for i in range(len(string.printable))}
-
-def shift_right(text, key):
-    text_ord = [rev_printable[i] for i in text]
-    text_crypt = [string.printable[(i+key)%100] for i in text_ord]
-    cryptext = ''.join(text_crypt)
-    return cryptext
-
-def shift_left(text, key):
-    return shift_right(text, key*-1)
-
 def byteshift_right(text, key):
     barr = bytearray(text, 'utf-8')
     text_crypt = [chr((i+key)%256) for i in barr]
