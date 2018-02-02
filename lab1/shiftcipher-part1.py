@@ -3,14 +3,18 @@
 # Simple file read in/out
 # Quyen, 2014
 
+# Code by:
+#   - Gede Ria Ghosalya
+#   - Jason Julian
+
 # Import libraries
-import sys, string
+import string
 import argparse
 
-rev_printable = {string.printable[i]:i for i in range(len(string.printable))}
+REV_PRINTABLE = {string.printable[i]:i for i in range(len(string.printable))}
 
 def shift_right(text, key):
-    text_ord = [rev_printable[i] for i in text]
+    text_ord = [REV_PRINTABLE[i] for i in text]
     text_crypt = [string.printable[(i+key)%100] for i in text_ord]
     cryptext = ''.join(text_crypt)
     return cryptext
@@ -18,11 +22,11 @@ def shift_right(text, key):
 def shift_left(text, key):
     return shift_right(text, key*-1)
 
-def doStuff(filein,fileout, key, mode):
+def doStuff(filein, fileout, key, mode):
     # open file handles to both files
     with open(filein, mode="r", encoding='utf-8', newline='\n') as fin:
         with open(fileout, mode='w', encoding='utf-8', newline='\n') as fout:
-            c    = fin.read()         # read in file into c as a str
+            c = fin.read()         # read in file into c as a str
             # and write to fileout
             if mode=="e":
                 cryptext = shift_right(c, key)
@@ -61,5 +65,3 @@ if __name__=="__main__":
     doStuff(filein,fileout, key, mode)
 
     # all done
-
-

@@ -3,6 +3,10 @@
 # Simple file read in/out
 # Quyen, 2014
 
+# Code by:
+#   - Gede Ria Ghosalya
+#   - Jason Julian
+
 # Import libraries
 import sys, string
 import argparse
