@@ -46,7 +46,7 @@ def get_chara_freq(message):
 
 def get_sherlock_freq():
     with open('sherlock.txt', 'r') as sherlock:
-        return get_chara_freq(sherlock.read())
+        return get_chara_freq(''.join(sherlock.read().split('\r')))
 
 def get_mapping(text1, text2):
     if len(text1) != len(text2):
@@ -54,25 +54,59 @@ def get_mapping(text1, text2):
     charmap = {text1[i]:text2[i]
                 for i in range(min(len(text1),
                                    len(text2)))}
-    # print(charmap)
+    print(charmap)
     return charmap
 
-def swap_map(swapmap, a, b):
-    swapmap[a] = b
-    swapmap[b] = a
+def get_hardcoded_swapmap():
+    swapmap = {char:char for char in get_sherlock_freq()}
 
+    # ----
+    swapmap['s'] = 'i' #addressed
+    swapmap['d'] = 's' #addressed
+    swapmap['r'] = 'd' #addressed
+    swapmap['o'] = 'a' 
+    swapmap['a'] = 'o' #not addressed
+    swapmap['u'] = 'w' #not addressed
+    swapmap['w'] = 'u' #not addressed
+    swapmap['n'] = 'h' #addressed
+    swapmap['h'] = 'r' #addressed
+    swapmap['g'] = 'y' #addressed
+    swapmap['i'] = 'n' #addressed
+    swapmap['I'] = 'v'
+    swapmap['m'] = 'g'
+    swapmap['y'] = 'm'
+    swapmap['f'] = 'c'
+    swapmap[','] = 'p'
+    swapmap['"'] = 'b'
+    swapmap['p'] = 'f'
+    swapmap['c'] = ','
+    swapmap['v'] = 'k'
+    swapmap['W'] = 'q'
+    swapmap['T'] = "'"
+    swapmap['H'] = ' '
+    swapmap['-'] = 'j'
+    swapmap['k'] = '"'
+    swapmap['S'] = '?'
+
+    return swapmap
+
+
+ 
 def map_message(message):
-    msg = str(message)
+    msg = ''.join(str(message).split())
     msg_srt = get_chara_freq(msg)
     mapp = get_mapping(msg_srt, get_sherlock_freq())
     
-    swapmap = {char:char for char in get_sherlock_freq()}
-    swap_map(swapmap, 's', 'i')
-    # swap_map(swapmap, 't', 'l')
-    swap_map(swapmap, '.', 'b')
-    swap_map(swapmap, 'n', 'h')
+    swapmap = get_hardcoded_swapmap()
     
-    out = ''.join([swapmap[mapp[i]] or i for i in msg])
+    out = ''.join([mapp[i] for i in msg[1:-1]])
+
+    #clearing b
+    out_nb = ''.join(out.split('b'))
+
+    out = ''.join([swapmap[i] for i in out_nb])
+
+    out = '\t' + out
     return out
 
 def sol1():
@@ -82,10 +116,10 @@ def sol1():
 
     dontcare = conn.recvuntil(':')
     challenge = conn.recvline()
-    print(challenge)
+    # print(challenge)
     # get_chara_freq(challenge)
     result = map_message(challenge)
-    print('\n\n\n', result)
+    print(result)
     # decrypt the challenge here
     solution = (0).to_bytes(7408, byteorder='big')
     conn.send(solution)
