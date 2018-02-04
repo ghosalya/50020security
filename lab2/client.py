@@ -10,10 +10,11 @@ Pwntool client for python3
 Install: see install.sh
 
 Documentation: https://python3-pwntools.readthedocs.io/en/latest/
+
+by: Gede Ria Ghosalya (1001841)
 """
 
 from pwn import remote
-from array import array
 
 # pass two bytestrings to this function
 def XOR(a, b):
@@ -92,6 +93,7 @@ def map_message(message):
     return out
 
 def sol1():
+    print('\n  ----- PART 1 -----  ')
     conn = remote(URL, PORT)
     message = conn.recvuntil('-Pad')  # receive TCP stream until end of menu
     conn.sendline("1")  # select challenge 1
@@ -112,27 +114,28 @@ def sol1():
 
 
 def sol2():
+    print('\n  ----- PART 2 -----  ')
     conn = remote(URL, PORT)
     message = conn.recvuntil('-Pad')  # receive TCP stream until end of menu
     conn.sendline("2")  # select challenge 2
 
     dontcare = conn.recvuntil(':')
-    challenge = conn.recvline()
-    # some all zero mask.
-    incoming = 'Submitted student ID: 1000000 and grade 0. [<-- this is not the exact plaintext]\n'
-    inco_byte = incoming.encode()
-    print(inco_byte)
-    target = 'Submitted student ID: 1001841 and grade 4. [<-- this is not the exact plaintext]\n'
-    targ_byte = target.encode()
-    print(targ_byte)
-    # TODO: find the magic mask!
-    # mask = (400).to_bytes(len(message), 'big')
-    mask = XOR(inco_byte, targ_byte)
-    print(mask)
+    challenge = conn.recvline().strip()
+    # print(challenge, len(challenge))
+
+    incoming   = b'           1000000      0       '
+    target     = b'           1001841      4       '
+
+    mask = XOR(incoming, target)
+    # print(mask, len(mask))
+
     message = XOR(challenge, mask)
+    # print(message, len(message))
+
     conn.send(message)
     message = conn.recvline()
     message = conn.recvline()
+
     if b'exact' in message:
         print(message)
     conn.close()
@@ -144,5 +147,5 @@ if __name__ == "__main__":
     URL = 'scy-phy.net'
     PORT = 1337
 
-    # sol1()
+    sol1()
     sol2()
