@@ -13,6 +13,7 @@ Documentation: https://python3-pwntools.readthedocs.io/en/latest/
 """
 
 from pwn import remote
+from array import array
 
 # pass two bytestrings to this function
 def XOR(a, b):
@@ -44,9 +45,12 @@ def get_chara_freq(message):
     # print(sorted_)
     return sorted_
 
-def get_sherlock_freq():
-    with open('sherlock.txt', 'r') as sherlock:
-        return get_chara_freq(''.join(sherlock.read().split('\r')))
+def get_abstract_freq():
+    abstracts = [' ','e','t','a','o','h','r','n','d','i',
+                 's','l','w','\n','g',',','u','c','m', 'y',
+                 'f','p','.','b','k','v','\"','-','\'','j',
+                 'q','?',"\t","+"]
+    return abstracts
 
 def get_mapping(text1, text2):
     if len(text1) != len(text2):
@@ -54,59 +58,37 @@ def get_mapping(text1, text2):
     charmap = {text1[i]:text2[i]
                 for i in range(min(len(text1),
                                    len(text2)))}
-    print(charmap)
+    # print(charmap)
     return charmap
 
 def get_hardcoded_swapmap():
-    swapmap = {char:char for char in get_sherlock_freq()}
+    swapmap = {char:char for char in get_abstract_freq()}
 
     # ----
-    swapmap['s'] = 'i' #addressed
-    swapmap['d'] = 's' #addressed
-    swapmap['r'] = 'd' #addressed
-    swapmap['o'] = 'a' 
-    swapmap['a'] = 'o' #not addressed
-    swapmap['u'] = 'w' #not addressed
-    swapmap['w'] = 'u' #not addressed
-    swapmap['n'] = 'h' #addressed
-    swapmap['h'] = 'r' #addressed
-    swapmap['g'] = 'y' #addressed
-    swapmap['i'] = 'n' #addressed
-    swapmap['I'] = 'v'
-    swapmap['m'] = 'g'
-    swapmap['y'] = 'm'
-    swapmap['f'] = 'c'
-    swapmap[','] = 'p'
-    swapmap['"'] = 'b'
-    swapmap['p'] = 'f'
-    swapmap['c'] = ','
-    swapmap['v'] = 'k'
-    swapmap['W'] = 'q'
-    swapmap['T'] = "'"
-    swapmap['H'] = ' '
-    swapmap['-'] = 'j'
-    swapmap['k'] = '"'
-    swapmap['S'] = '?'
+    swapmap['"'] = 'v'
+    swapmap['v'] = '"'
+    # ----
+    swapmap['?'] = "q"
+    swapmap['q'] = "?"
+    # ----
+    swapmap['j'] = "'"
+    swapmap["'"] = "j"
 
     return swapmap
 
 
- 
 def map_message(message):
-    msg = ''.join(str(message).split())
+    msg = ''.join([chr(byte) for byte in message if byte != b'r'])
     msg_srt = get_chara_freq(msg)
-    mapp = get_mapping(msg_srt, get_sherlock_freq())
-    
+    mapp = get_mapping(msg_srt, get_abstract_freq())
     swapmap = get_hardcoded_swapmap()
+
+    out_a = [mapp[i] for i in msg[1:-1] if i in mapp]
+    out_b = [swapmap[i] for i in out_a]
     
-    out = ''.join([mapp[i] for i in msg[1:-1]])
+    out = "\t" + ''.join(out_b)
+    # print('LENGTH:', len(out))
 
-    #clearing b
-    out_nb = ''.join(out.split('b'))
-
-    out = ''.join([swapmap[i] for i in out_nb])
-
-    out = '\t' + out
     return out
 
 def sol1():
@@ -116,14 +98,13 @@ def sol1():
 
     dontcare = conn.recvuntil(':')
     challenge = conn.recvline()
-    # print(challenge)
-    # get_chara_freq(challenge)
-    result = map_message(challenge)
-    print(result)
+
     # decrypt the challenge here
-    solution = (0).to_bytes(7408, byteorder='big')
-    conn.send(solution)
+    result = map_message(challenge)
+    solution = result.encode()
+
     message = conn.recvline()
+    conn.send(solution)
     message = conn.recvline()
     if b'Congratulations' in message:
         print(message)
@@ -138,8 +119,16 @@ def sol2():
     dontcare = conn.recvuntil(':')
     challenge = conn.recvline()
     # some all zero mask.
+    incoming = 'Submitted student ID: 1000000 and grade 0. [<-- this is not the exact plaintext]\n'
+    inco_byte = incoming.encode()
+    print(inco_byte)
+    target = 'Submitted student ID: 1001841 and grade 4. [<-- this is not the exact plaintext]\n'
+    targ_byte = target.encode()
+    print(targ_byte)
     # TODO: find the magic mask!
-    mask = (0).to_bytes(len(message), 'big')
+    # mask = (400).to_bytes(len(message), 'big')
+    mask = XOR(inco_byte, targ_byte)
+    print(mask)
     message = XOR(challenge, mask)
     conn.send(message)
     message = conn.recvline()
@@ -155,5 +144,5 @@ if __name__ == "__main__":
     URL = 'scy-phy.net'
     PORT = 1337
 
-    sol1()
+    # sol1()
     sol2()
