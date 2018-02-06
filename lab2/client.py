@@ -59,7 +59,6 @@ def get_mapping(text1, text2):
     charmap = {text1[i]:text2[i]
                 for i in range(min(len(text1),
                                    len(text2)))}
-    # print(charmap)
     return charmap
 
 def get_hardcoded_swapmap():
@@ -88,7 +87,6 @@ def map_message(message):
     out_b = [swapmap[i] for i in out_a]
     
     out = "\t" + ''.join(out_b)
-    # print('LENGTH:', len(out))
 
     return out
 
@@ -121,17 +119,14 @@ def sol2():
 
     dontcare = conn.recvuntil(':')
     challenge = conn.recvline().strip()
-    # print(challenge, len(challenge))
 
+    #            b'|    11   |100xxxx|  6 |x|  7  |'
     incoming   = b'           1000000      0       '
     target     = b'           1001841      4       '
 
     mask = XOR(incoming, target)
-    # print(mask, len(mask))
-
     message = XOR(challenge, mask)
-    # print(message, len(message))
-
+    
     conn.send(message)
     message = conn.recvline()
     message = conn.recvline()
