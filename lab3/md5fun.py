@@ -1,6 +1,7 @@
 import hashlib
 import timeit
-from itertools import permutations
+import random
+from itertools import permutations, product
 from datetime import datetime
 
 
@@ -15,21 +16,25 @@ def get_hash():
 
     with open('hash5.txt', 'r') as hh:
         hashes = [h.strip() for h in hh]
-
-    with open('words5.txt', 'r') as w5:
-        for word in w5:
-            perms = [''.join(p) for p in permutations(word.strip())]
-            for p in perms:
-                perm_n = [p]
-                for i in range(5):
-                    n_perm = []
-                    for j in '0123456789':
-                        n_perm += [pp[:i]+j+p[i:] for pp in perm_n]
-                        # print(n_perm)
-                    perm_n += n_perm
-                mapped_hash.update({w: hash_(w) for w in perm_n 
-                                    if hash_(w) in hashes})
+        charset = 'abcdefghijklmnopqrstuvwxyz0123456789'
+        perms = [''.join(p) for p in product(charset, repeat=5)]
+        for p in perms:
+            hassh = hash_(p)
+            if hassh in hashes:
+                mapped_hash.update({p: hassh})
     return mapped_hash
+
+def salt_passwords(mapped_hash):
+    salted_pass = [pas+random.choice('abcdefghijklmnopqrstuvwxyz')
+                   for pas in mapped_hash]
+
+    with open('pass6.temp.txt', 'w') as p6:
+        with open('salted6.temp.txt', 'w') as sp6:
+            # temp is used in file name to avoid
+            # overriding the original files (that is used in the report)
+            for pas in salted_pass:
+                p6.write(pas+'\n')
+                sp6.write(hash_(pas)+'\n')
 
 
 if __name__ == '__main__':
@@ -41,6 +46,11 @@ if __name__ == '__main__':
 
     for k in hashed:
         print(k, hashed[k])
+
+    # comment if dont want to generate new salt
+    # salt_passwords(hashed)
+
+
     # tmit = timeit.timeit('get_hash()', 
     #               setup='from __main__ import get_hash', 
     #               number=10)
