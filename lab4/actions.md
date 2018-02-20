@@ -32,3 +32,19 @@ instead of an image file that loads automatically, now we have a link that point
 putting it in a simple html doesnt work because the cookies are not the same.
 
 
+**listing secret file**
+
+Using ping input field, we can add an additional shell command by inputting
+
+    localhost && <another command>
+
+in this case, displaying the contents of secret file will need
+
+    localhost && cat secrets
+
+**opening reverse shell**
+
+
+
+
+
