@@ -10,6 +10,9 @@ FULLROUND = 31
 sbox = [0xC, 0x5, 0x6, 0xB, 0x9, 0x0, 0xA, 0xD,
         0x3, 0xE, 0xF, 0x8, 0x4, 0x7, 0x1, 0x2]
 
+sbox_inv = [0x5, 0xE, 0xF, 0x8, 0xC, 0x1, 0x2, 0xD,
+            0xB, 0x4, 0x6, 0x3, 0x0, 0x7, 0x9, 0xA]
+
 # PLayer
 pmt = [0, 16, 32, 48, 1, 17, 33, 49, 2, 18, 34, 50, 3, 19, 35, 51,
        4, 20, 36, 52, 5, 21, 37, 53, 6, 22, 38, 54, 7, 23, 39, 55,
@@ -32,27 +35,96 @@ def ror(val, r_bits, max_bits): return \
 
 
 def genRoundKeys(key):
-    pass
+    # blen = key.bit_length()
+    blen = 80
+
+    current_key = key
+    round_keys = [32, current_key >> 16]
+
+    for i in range(1, FULLROUND + 3):
+
+        # step 1
+        key1 = rol(current_key, 61, 80)
+
+        # step 2
+        front_key = key1 >> 76
+        key2f_ = sbox[front_key]
+        key2f = key2f_<< 76
+        key2b = key1 & ((1 << 76) -1)
+        key2 = key2f + key2b
+
+        # step 3
+        mask3 = ((1 << 5) -1) << 15
+        key3pre = key2 & mask3
+        key3xor = ((key3pre >> 15) ^ i)
+        key3 = (key2 & ~mask3) + (key3xor << 15)
+
+        # finally updating key
+        current_key = key3
+        round_keys.append(current_key >> 16)
+
+    return round_keys
 
 
 def addRoundKey(state, Ki):
-    pass
+    return state ^ Ki
 
-
-def sBoxLayer(state):
-    pass
-
+def sBoxLayer(state, inv=False):
+    output = 0
+    for i in range(16):
+        inp = ((state >> (i*4)) & 15)
+        if inv:
+            outp = sbox_inv[inp]
+        else:
+            outp = sbox[inp]
+        output += (outp << (i*4))
+    return output
 
 def pLayer(state):
-    pass
+    statelist = []
+    state_ = state
+    while state_ > 1:
+        statelist = [state_%2] + statelist
+        state_ = state_ >> 1
+    # final leftmost bit
+    statelist = [state_] + statelist 
+    statelist_ = statelist[::-1]
+
+    # permutating
+    newlist = [0] * 64
+    for i in range(len(statelist)):
+        newlist[pmt[i]] = statelist_[i]
+
+    newlist = newlist[::-1]
+
+    # combination
+    result = 0
+    for j in newlist:
+        result = result << 1
+        result += j
+
+    return result
 
 
 def present_round(state, roundKey):
-    return state
+    s1 = addRoundKey(state, roundKey)
+    # print('s1', s1)
+    s2 = sBoxLayer(s1)
+    # print('s2', s2)
+    s3 = pLayer(s2)
+    # print('cipher', s3)
+    return s3
 
 
 def present_inv_round(state, roundKey):
-    return state
+    # pLayer inverse - do twice
+    s3 = pLayer(pLayer(state))
+    # print('inv-s2',s3)
+    s2 = sBoxLayer(s3, inv=True)
+    # print('inv-s1',s2)
+    s1 = s2 ^ roundKey
+    # print('inv-plain',s1)
+    return s1
 
 
 def present(plain, key):
@@ -81,11 +153,12 @@ if __name__ == "__main__":
         assert keysTest[k] == keys[k]
     
     # Testvectors for single rounds without keyscheduling
+    # IS TEST CORRECT??
     plain1 = 0x0000000000000000
     key1 = 0x00000000000000000000
     round1 = present_round(plain1, key1)
     round11 = 0xffffffff00000000
-    assert round1 == round11
+    assert round1 == round11 
 
     round2 = present_round(round1, key1)
     round22 = 0xff00ffff000000
@@ -98,6 +171,7 @@ if __name__ == "__main__":
     # invert single rounds
     plain11 = present_inv_round(round1, key1)
     assert plain1 == plain11
+    round2 = present_round(round1, key1)
     plain22 = present_inv_round(round2, key1)
     assert round1 == plain22
     plain33 = present_inv_round(round3, key1)
@@ -127,3 +201,5 @@ if __name__ == "__main__":
     cipher4 = present(plain4, key4)
     plain44 = present_inv(cipher4, key4)
     assert plain4 == plain44
+
+    print("All test passed!")
